@@ -719,9 +719,9 @@ KBUILD_CFLAGS   += -Os
 KBUILD_AFLAGS   += -Os
 KBUILD_LDFLAGS  += -Os
 else
-KBUILD_CFLAGS   += -O3 -march=armv8.2-a+lse -fno-trapping-math -fno-math-errno -mllvm -polly
+KBUILD_CFLAGS   += -O3 -march=armv8.2-a+lse -fno-trapping-math -fno-math-errno
 KBUILD_AFLAGS   += -O3 -march=armv8.2-a+lse
-KBUILD_LDFLAGS  += -O3,-Bsymbolic-functions,--as-needed -mllvm -polly
+KBUILD_LDFLAGS  += -O3,-Bsymbolic-functions,--as-needed
 endif
 
 ifdef CONFIG_CC_WERROR
@@ -748,23 +748,18 @@ endif
 endif
 
 ifdef CONFIG_LLVM_POLLY
-KBUILD_CFLAGS	+= -mllvm -polly \
-		   -mllvm -polly-run-inliner \
-		   -mllvm -polly-ast-use-context \
-		   -mllvm -polly-detect-keep-going \
-		   -mllvm -polly-invariant-load-hoisting \
-		   -mllvm -polly-vectorizer=stripmine
-
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly)
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-run-inliner)
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-ast-use-context)
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-detect-keep-going)
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-invariant-load-hoisting)
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-vectorizer=stripmine)
 ifeq ($(shell test $(CONFIG_CLANG_VERSION) -gt 130000; echo $$?),0)
-KBUILD_CFLAGS	+= -mllvm -polly-loopfusion-greedy=1 \
-		   -mllvm -polly-reschedule=1 \
-		   -mllvm -polly-postopts=1 \
-		   -mllvm -polly-num-threads=0 \
-		   -mllvm -polly-omp-backend=LLVM \
-		   -mllvm -polly-scheduling=dynamic \
-		   -mllvm -polly-scheduling-chunksize=1
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-loopfusion-greedy=1)
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-reschedule=1)
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-postopts=1)
 else
-KBUILD_CFLAGS	+= -mllvm -polly-opt-fusion=max
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-opt-fusion=max)
 endif
 
 # Polly may optimise loops with dead paths beyound what the linker
@@ -772,7 +767,7 @@ endif
 # so we tell Polly to perfom proven DCE on the loops it optimises
 # in order to preserve the overall effect of the linker's DCE.
 ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
-POLLY_FLAGS	+= -mllvm -polly-run-dce
+KBUILD_CFLAGS += $(call cc-option,-mllvm -polly-run-dce)
 endif
 endif
 
@@ -972,10 +967,8 @@ endif
 lto-clang-flags += -fvisibility=default $(call cc-option, -fsplit-lto-unit)
 
 # Limit inlining across translation units to reduce binary size
-LD_FLAGS_LTO_CLANG := -mllvm -import-instr-limit=5
-
-KBUILD_LDFLAGS += $(LD_FLAGS_LTO_CLANG)
-KBUILD_LDFLAGS_MODULE += $(LD_FLAGS_LTO_CLANG)
+KBUILD_LDFLAGS += $(call cc-option,-mllvm -import-instr-limit=5)
+KBUILD_LDFLAGS_MODULE += $(call cc-option,-mllvm -import-instr-limit=5)
 
 KBUILD_LDFLAGS_MODULE += -T scripts/module-lto.lds
 
